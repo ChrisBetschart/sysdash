@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import Tile from "@/components/Tile";
 import { systems, type System } from "@/data/systems";
 import { getStatus, compareBySeverity, type Status } from "@/lib/status";
@@ -12,10 +13,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-5xl p-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-white">SysDash</h1>
-        <p className="text-slate-400">System status at a glance</p>
-      </header>
+      <Header statuses={rows.map((r) => r.status)} />
 
       <section className="grid grid-cols-1 gap-4">
         {rows.map((s) => (
