@@ -5,11 +5,10 @@ import { getStatus, compareBySeverity, type Status } from "@/lib/status";
 type SystemWithStatus = System & { status: Status };
 
 export default function Home() {
-  // Derive status for every system (not stored in the data).
-  const rows: SystemWithStatus[] = systems.map((s) => ({
-    ...s,
-    status: getStatus(s.value, s.limits),
-  }));
+  // Derive status for every system, then sort: critical first.
+  const rows: SystemWithStatus[] = systems
+    .map((s) => ({ ...s, status: getStatus(s.value, s.limits) }))
+    .sort((a, b) => compareBySeverity(a.status, b.status));
 
   return (
     <main className="mx-auto max-w-5xl p-8">
