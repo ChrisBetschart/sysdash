@@ -1,8 +1,16 @@
 import Tile from "@/components/Tile";
-// Hands-on 3: you need this line to load the data.
-// import { systems } from "@/data/systems";
+import { systems, type System } from "@/data/systems";
+import { getStatus, compareBySeverity, type Status } from "@/lib/status";
+
+type SystemWithStatus = System & { status: Status };
 
 export default function Home() {
+  // Derive status for every system (not stored in the data).
+  const rows: SystemWithStatus[] = systems.map((s) => ({
+    ...s,
+    status: getStatus(s.value, s.limits),
+  }));
+
   return (
     <main className="mx-auto max-w-5xl p-8">
       <header className="mb-8">
@@ -11,17 +19,9 @@ export default function Home() {
       </header>
 
       <section className="grid grid-cols-1 gap-4">
-        {/* Hands-on 2: change the title and value of this tile, then save. */}
-        <Tile title="CPU Load" value={42} unit="%" />
-
-        {/*
-          Hands-on 3: instead of writing tiles by hand, render one per record.
-          Import `systems` above and replace the tile above with:
-
-          {systems.map((s) => (
-            <Tile key={s.id} title={s.title} value={s.value} unit={s.unit} />
-          ))}
-        */}
+        {rows.map((s) => (
+          <Tile key={s.id} title={s.title} value={s.value} unit={s.unit} status={s.status} />
+        ))}
       </section>
     </main>
   );
