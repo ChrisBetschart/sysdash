@@ -11,9 +11,9 @@ const overallText: Record<Status, string> = {
 };
 
 const overallStyle: Record<Status, string> = {
-  ok: "bg-emerald-900 text-emerald-200",
-  warn: "bg-amber-900 text-amber-200",
-  crit: "bg-red-900 text-red-100",
+  ok: "bg-ok-soft text-ok",
+  warn: "bg-warn-soft text-warn",
+  crit: "bg-crit-soft text-crit",
 };
 
 export default function Header({ statuses }: HeaderProps) {
@@ -31,8 +31,8 @@ export default function Header({ statuses }: HeaderProps) {
 
   return (
     <header className="mb-8">
-      <h1 className="text-3xl font-bold text-white">SysDash</h1>
-      <p className="text-slate-400">System status at a glance</p>
+      <h1 className="text-3xl font-bold text-fg">SysDash</h1>
+      <p className="text-muted">System status at a glance</p>
 
       <div className={`mt-4 rounded-xl px-4 py-3 ${overallStyle[worst]}`}>
         <p className="font-semibold">{overallText[worst]}</p>

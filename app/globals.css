@@ -1,7 +1,27 @@
 @import "tailwindcss";
 
+/* Design tokens: the only place where colors are defined.
+   Tailwind turns each --color-x into utilities like bg-x, text-x, border-x. */
+@theme {
+  --color-page: #0b1220;
+  --color-surface: #1e293b;
+  --color-raised: #334155;
+  --color-raised-hover: #475569;
+  --color-line: #334155;
+  --color-fg: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-accent: #38bdf8;
+
+  --color-ok: #6ee7b7;
+  --color-ok-soft: #064e3b;
+  --color-warn: #fcd34d;
+  --color-warn-soft: #78350f;
+  --color-crit: #fca5a5;
+  --color-crit-soft: #7f1d1d;
+}
+
 body {
-  background: #0b1220;
-  color: #e5e7eb;
+  background: var(--color-page);
+  color: var(--color-fg);
   font-family: system-ui, sans-serif;
 }

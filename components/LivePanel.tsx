@@ -61,9 +61,9 @@ export default function LivePanel({ title, source }: LivePanelProps) {
     <section aria-labelledby={titleId} className="mt-10">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 id={titleId} className="text-xl font-semibold text-white">{title}</h2>
+          <h2 id={titleId} className="text-xl font-semibold text-fg">{title}</h2>
           {state.kind === "success" && state.observedAt && (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted">
               Gemessen: {new Date(state.observedAt).toLocaleString("de-CH")}
             </p>
           )}
@@ -72,22 +72,22 @@ export default function LivePanel({ title, source }: LivePanelProps) {
           type="button"
           onClick={load}
           disabled={state.kind === "loading"}
-          className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:opacity-50"
+          className="rounded-lg bg-raised px-4 py-2 text-sm font-medium text-fg hover:bg-raised-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
         >
           {state.kind === "loading" ? "Lädt…" : "Aktualisieren"}
         </button>
       </div>
 
       <div aria-live="polite">
-        {state.kind === "loading" && <p className="text-slate-400">Daten werden geladen…</p>}
+        {state.kind === "loading" && <p className="text-muted">Daten werden geladen…</p>}
 
         {state.kind === "error" && (
-          <p role="alert" className="rounded-xl bg-red-900 px-4 py-3 text-red-100">
+          <p role="alert" className="rounded-xl bg-crit-soft px-4 py-3 text-crit">
             Daten konnten nicht geladen werden: {state.message}
           </p>
         )}
 
-        {state.kind === "empty" && <p className="text-slate-400">Keine aktuellen Messwerte verfügbar.</p>}
+        {state.kind === "empty" && <p className="text-muted">Keine aktuellen Messwerte verfügbar.</p>}
 
         {state.kind === "success" && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

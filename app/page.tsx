@@ -17,7 +17,7 @@ export default function Home() {
       <Header statuses={rows.map((r) => r.status)} />
 
       <section aria-labelledby="systems-title">
-        <h2 id="systems-title" className="mb-4 text-xl font-semibold text-white">Systeme</h2>
+        <h2 id="systems-title" className="mb-4 text-xl font-semibold text-fg">Systeme</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {rows.map((s) => (
           <Tile key={s.id} title={s.title} value={s.value} unit={s.unit} status={s.status} />
