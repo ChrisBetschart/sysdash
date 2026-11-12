@@ -16,10 +16,13 @@ export default function Home() {
     <main className="mx-auto max-w-7xl p-4 sm:p-8">
       <Header statuses={rows.map((r) => r.status)} />
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section aria-labelledby="systems-title">
+        <h2 id="systems-title" className="mb-4 text-xl font-semibold text-white">Systeme</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {rows.map((s) => (
           <Tile key={s.id} title={s.title} value={s.value} unit={s.unit} status={s.status} />
         ))}
+        </div>
       </section>
 
       <LivePanel title="Wetter Luzern (OpenWeatherMap)" source="weather" />
