@@ -1,4 +1,4 @@
-import MetarPanel from "@/components/MetarPanel";
+import LivePanel from "@/components/LivePanel";
 import Header from "@/components/Header";
 import Tile from "@/components/Tile";
 import { systems, type System } from "@/data/systems";
@@ -21,8 +21,9 @@ export default function Home() {
           <Tile key={s.id} title={s.title} value={s.value} unit={s.unit} status={s.status} />
         ))}
       </section>
-      
-      <MetarPanel />
+
+      <LivePanel title="Wetter Luzern (OpenWeatherMap)" source="weather" />
+      <LivePanel title="Flughafen Zürich (METAR)" source="metar" />
     </main>
   );
 }

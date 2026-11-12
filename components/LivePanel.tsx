@@ -4,44 +4,64 @@ import { useCallback, useEffect, useState } from "react";
 import Tile from "@/components/Tile";
 import { getStatus } from "@/lib/status";
 import { parseMetar, metarToTiles, type MetricTile } from "@/lib/metar";
+import { parseWeather, weatherToTiles } from "@/lib/weather";
 
-// Every possible UI state, as a union type.
+export type Source = "metar" | "weather";
+
+type Loaded = { tiles: MetricTile[]; observedAt?: string };
+
+// One loader per source. Record<Source, ...> forces every source to be handled.
+const loaders: Record<Source, (res: Response) => Promise<Loaded>> = {
+  metar: async (res) => {
+    const m = parseMetar(await res.text()); // XML
+    return { tiles: m ? metarToTiles(m) : [], observedAt: m?.observedAt };
+  },
+  weather: async (res) => {
+    const w = parseWeather(await res.json()); // JSON
+    return { tiles: w ? weatherToTiles(w) : [], observedAt: w?.observedAt };
+  },
+};
+
 type State =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "empty" }
   | { kind: "success"; tiles: MetricTile[]; observedAt?: string };
 
-export default function MetarPanel() {
+type LivePanelProps = {
+  title: string;
+  source: Source;
+};
+
+export default function LivePanel({ title, source }: LivePanelProps) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const titleId = `${source}-title`;
 
   const load = useCallback(async () => {
     setState({ kind: "loading" });
     try {
-      const res = await fetch("/api/metar", { cache: "no-store" });
+      const res = await fetch(`/api/${source}`, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(
           res.status === 429 ? "Zu viele Anfragen, bitte später erneut versuchen." : `Serverfehler (${res.status})`,
         );
       }
-      const metar = parseMetar(await res.text());
-      const tiles = metar ? metarToTiles(metar) : [];
-      setState(tiles.length > 0 ? { kind: "success", tiles, observedAt: metar?.observedAt } : { kind: "empty" });
+      const { tiles, observedAt } = await loaders[source](res);
+      setState(tiles.length > 0 ? { kind: "success", tiles, observedAt } : { kind: "empty" });
     } catch (e) {
       setState({ kind: "error", message: e instanceof Error ? e.message : "Unbekannter Fehler" });
     }
-  }, []);
+  }, [source]);
 
-  // Load once when the component appears.
   useEffect(() => {
     load();
   }, [load]);
 
   return (
-    <section aria-labelledby="metar-title" className="mt-10">
+    <section aria-labelledby={titleId} className="mt-10">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 id="metar-title" className="text-xl font-semibold text-white">Flughafen Zürich (METAR)</h2>
+          <h2 id={titleId} className="text-xl font-semibold text-white">{title}</h2>
           {state.kind === "success" && state.observedAt && (
             <p className="text-sm text-slate-400">
               Gemessen: {new Date(state.observedAt).toLocaleString("de-CH")}
