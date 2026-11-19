@@ -70,14 +70,16 @@ type State =
 type LivePanelProps = {
   title: string;
   source: Source;
+  refreshMs?: number; // polling interval, default 5 minutes
 };
 
-export default function LivePanel({ title, source }: LivePanelProps) {
+export default function LivePanel({ title, source, refreshMs = 300_000 }: LivePanelProps) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const titleId = `${source}-title`;
 
-  const load = useCallback(async () => {
-    setState({ kind: "loading" });
+  // silent = background refresh: keep showing current tiles instead of "Lädt…".
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setState({ kind: "loading" });
 
     // Source failed: log it and show the last good value if we have one.
     const fallback = (reason: string, detail?: unknown): boolean => {
@@ -111,9 +113,15 @@ export default function LivePanel({ title, source }: LivePanelProps) {
     }
   }, [source]);
 
+  // Initial load + polling. Cleanup stops the timer, otherwise timers pile up.
   useEffect(() => {
     load();
-  }, [load]);
+    const id = setInterval(() => {
+      // Pause while the tab is in the background: saves API quota.
+      if (document.visibilityState === "visible") load(true);
+    }, refreshMs);
+    return () => clearInterval(id);
+  }, [load, refreshMs]);
 
   return (
     <section aria-labelledby={titleId} className="mt-10">
@@ -127,15 +135,16 @@ export default function LivePanel({ title, source }: LivePanelProps) {
               </span>
             )}
           </div>
-          {state.kind === "success" && state.observedAt && (
+          {state.kind === "success" && (
             <p className="text-sm text-muted">
-              Gemessen: {new Date(state.observedAt).toLocaleString("de-CH")}
+              {state.observedAt && <>Gemessen: {new Date(state.observedAt).toLocaleString("de-CH")} · </>}
+              Abgerufen: {new Date(state.fetchedAt).toLocaleTimeString("de-CH")}
             </p>
           )}
         </div>
         <button
           type="button"
-          onClick={load}
+          onClick={() => load()}
           disabled={state.kind === "loading"}
           className="rounded-lg bg-raised px-4 py-2 text-sm font-medium text-fg hover:bg-raised-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
         >

@@ -2,6 +2,7 @@ import LivePanel from "@/components/LivePanel";
 import Header from "@/components/Header";
 import Tile from "@/components/Tile";
 import TransportTile from "@/components/TransportTile";
+import AutoRefresh from "@/components/AutoRefresh";
 import { systems, type System } from "@/data/systems";
 import { getStatus, compareBySeverity, type Status } from "@/lib/status";
 import { getTransportStatus } from "@/lib/transport";
@@ -19,6 +20,9 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-7xl p-4 sm:p-8">
+      {/* Re-fetch server data (transport tile) every 60 s */}
+      <AutoRefresh everyMs={60_000} />
+
       <Header statuses={rows.map((r) => r.status)} />
 
       <section aria-labelledby="systems-title">
@@ -31,8 +35,10 @@ export default async function Home() {
         </div>
       </section>
 
-      <LivePanel title="Wetter Luzern (OpenWeatherMap)" source="weather" />
-      <LivePanel title="Flughafen Zürich (METAR)" source="metar" />
+      {/* OWM updates ~every 10 min, free tier 1000 calls/day */}
+      <LivePanel title="Wetter Luzern (OpenWeatherMap)" source="weather" refreshMs={300_000} />
+      {/* METAR is published every 30 min */}
+      <LivePanel title="Flughafen Zürich (METAR)" source="metar" refreshMs={300_000} />
     </main>
   );
 }
