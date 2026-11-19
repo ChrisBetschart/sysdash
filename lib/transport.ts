@@ -16,7 +16,7 @@ export type TransportResult =
   | ({ health: "degraded"; reason: string } & Snapshot)
   | { health: "down"; reason: string };
 
-const URL = "https://transport.opendata.ch/v1/stationboard?station=Luzern&limit=15";
+const URL = "https://transport.opendata.ch/v1/stationboard?station=Luzern&limit=40";
 
 // Last good value in server memory. Kept on globalThis so it survives hot reload in dev.
 const store = globalThis as typeof globalThis & { __transportLast?: Snapshot };
