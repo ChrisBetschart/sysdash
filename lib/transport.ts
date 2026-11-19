@@ -1,34 +1,32 @@
 // Layer for transport.opendata.ch. Only this file knows the API's structure.
 export type Health = "ok" | "degraded" | "down";
 
-type Snapshot = {
-  minutes: number;      // minutes until next departure
-  departureAt: number;  // departure time in ms
-  station?: string;     // e.g. "Luzern"
-  line?: string;        // e.g. "S5", "IR VAE"
-  to?: string;          // destination, e.g. "Giswil"
-  platform?: string;    // e.g. "14"
-  fetchedAt: number;
+export type Departure = {
+  ts: number;          // departure, Unix seconds
+  line?: string;       // e.g. "S1", "IR VAE"
+  to?: string;         // destination
+  platform?: string;
+  operator?: string;   // e.g. "SBB", "ZB"
 };
+
+type Snapshot = { station?: string; departures: Departure[]; fetchedAt: number };
 
 export type TransportResult =
   | ({ health: "ok" } & Snapshot)
   | ({ health: "degraded"; reason: string } & Snapshot)
   | { health: "down"; reason: string };
 
-const URL = "https://transport.opendata.ch/v1/stationboard?station=Luzern&limit=5";
+const URL = "https://transport.opendata.ch/v1/stationboard?station=Luzern&limit=15";
 
 // Last good value in server memory. Kept on globalThis so it survives hot reload in dev.
 const store = globalThis as typeof globalThis & { __transportLast?: Snapshot };
-
-type Departure = { ts: number; line?: string; to?: string; platform?: string };
 
 // Non-empty string or undefined. Anything else (null, number, object) is ignored.
 function str(v: unknown): string | undefined {
   return typeof v === "string" && v.trim() !== "" ? v.trim() : undefined;
 }
 
-// "S" + "5" -> "S5", "IR" + "VAE" -> "IR VAE"
+// "S" + "1" -> "S1", "IR" + "VAE" -> "IR VAE"
 function lineName(category?: string, number?: string): string | undefined {
   if (category && number) return /^\d+$/.test(number) ? category + number : `${category} ${number}`;
   return category ?? number;
@@ -48,6 +46,7 @@ function readBoard(data: unknown): { station?: string; departures: Departure[] }
       category?: unknown;
       number?: unknown;
       to?: unknown;
+      operator?: unknown;
       stop?: { departureTimestamp?: unknown; platform?: unknown };
     } | null;
 
@@ -59,12 +58,14 @@ function readBoard(data: unknown): { station?: string; departures: Departure[] }
       line: lineName(str(e?.category), str(e?.number)),
       to: str(e?.to),
       platform: str(e?.stop?.platform),
+      operator: str(e?.operator),
     });
   }
+  departures.sort((a, b) => a.ts - b.ts); // don't rely on the API's order
   return { station, departures };
 }
 
-// The only function the rest of the app calls.
+// The only function that talks to the API.
 export async function getTransportStatus(): Promise<TransportResult> {
   try {
     const res = await fetch(URL, { cache: "no-store", signal: AbortSignal.timeout(5000) });
@@ -73,19 +74,7 @@ export async function getTransportStatus(): Promise<TransportResult> {
     const parsed = readBoard(await res.json());
     if (!parsed || parsed.departures.length === 0) throw new Error("Keine Abfahrten in der Antwort");
 
-    // Earliest departure first.
-    const next = [...parsed.departures].sort((a, b) => a.ts - b.ts)[0];
-    const departureAt = next.ts * 1000; // Unix seconds -> ms
-
-    const snapshot: Snapshot = {
-      minutes: Math.max(0, Math.round((departureAt - Date.now()) / 60000)),
-      departureAt,
-      station: parsed.station,
-      line: next.line,
-      to: next.to,
-      platform: next.platform,
-      fetchedAt: Date.now(),
-    };
+    const snapshot: Snapshot = { ...parsed, fetchedAt: Date.now() };
     store.__transportLast = snapshot;
     return { health: "ok", ...snapshot };
   } catch (e) {
@@ -96,4 +85,21 @@ export async function getTransportStatus(): Promise<TransportResult> {
     if (last) return { health: "degraded", reason, ...last };
     return { health: "down", reason };
   }
+}
+
+// Pure function: derives the key figures relative to "now".
+// Past departures are dropped, so even an old snapshot shows correct minutes.
+export function summarize(departures: Departure[], now: number = Date.now()) {
+  const upcoming = departures.filter((d) => d.ts * 1000 >= now - 60_000); // 1 min grace
+  const minutes = upcoming.map((d) => Math.max(0, Math.round((d.ts * 1000 - now) / 60_000)));
+
+  let maxGap = minutes[0] ?? 0; // wait until the first departure counts as a gap too
+  for (let i = 1; i < minutes.length; i++) maxGap = Math.max(maxGap, minutes[i] - minutes[i - 1]);
+
+  return {
+    upcoming,
+    minutes,
+    countIn30: minutes.filter((m) => m <= 30).length,
+    maxGap,
+  };
 }
