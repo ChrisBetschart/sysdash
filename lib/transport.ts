@@ -3,7 +3,7 @@ export type Health = "ok" | "degraded" | "down";
 
 export type Departure = {
   ts: number;          // departure, Unix seconds
-  line?: string;       // e.g. "S1", "IR VAE"
+  line?: string;       // e.g. "S1", "EC 178", "IR VAE"
   to?: string;         // destination
   platform?: string;
   operator?: string;   // e.g. "SBB", "ZB"
@@ -26,10 +26,14 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.trim() !== "" ? v.trim() : undefined;
 }
 
-// "S" + "1" -> "S1", "IR" + "VAE" -> "IR VAE"
+// "S" + "1" -> "S1", "EC" + "000178" -> "EC 178", "IR" + "VAE" -> "IR VAE"
 function lineName(category?: string, number?: string): string | undefined {
-  if (category && number) return /^\d+$/.test(number) ? category + number : `${category} ${number}`;
-  return category ?? number;
+  if (!category || !number) return category ?? number;
+  if (/^\d+$/.test(number)) {
+    const n = String(Number(number)); // drop leading zeros
+    return n.length <= 2 ? category + n : `${category} ${n}`; // short line numbers stay joined
+  }
+  return `${category} ${number}`;
 }
 
 // Tolerant reader: only the fields we need. Entries without a valid timestamp are skipped.
