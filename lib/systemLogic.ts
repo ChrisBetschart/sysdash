@@ -1,4 +1,5 @@
-import { compareBySeverity, type Status } from "@/lib/status";
+import { severity, type Status } from "@/lib/status";
+import { sortBy, type Criterion } from "@/lib/sortBy";
 
 // One system as the dashboard displays it.
 export type SystemRow = {
@@ -9,7 +10,7 @@ export type SystemRow = {
   status: Status;
 };
 
-export type SortKey = "severity" | "name";
+export type SortKey = "severity" | "name" | "value";
 
 // All functions are pure: same input -> same output, no side effects,
 // input arrays are never mutated.
@@ -18,14 +19,15 @@ export function normalizeQuery(query: string): string {
   return query.trim().toLowerCase();
 }
 
-const byName = (a: SystemRow, b: SystemRow) =>
-  a.title.localeCompare(b.title, "de-CH", { sensitivity: "base" });
+// Tie-breaker used by every sort key, so the order is always stable.
+const byTitle: Criterion<SystemRow> = { by: (s) => s.title };
 
-// Record<SortKey, ...> forces a comparator for every sort key.
-const comparators: Record<SortKey, (a: SystemRow, b: SystemRow) => number> = {
-  // Most severe first; equal severity -> alphabetical, so the order is stable.
-  severity: (a, b) => compareBySeverity(a.status, b.status) || byName(a, b),
-  name: byName,
+// Record<SortKey, ...> forces criteria for every sort key.
+// All three use the same generic sortBy, only the criteria differ.
+const sortCriteria: Record<SortKey, Criterion<SystemRow>[]> = {
+  severity: [{ by: (s) => severity[s.status], dir: "desc" }, byTitle],
+  name: [byTitle],
+  value: [{ by: (s) => s.value, dir: "desc" }, byTitle],
 };
 
 export function filterSystems(rows: readonly SystemRow[], query: string): SystemRow[] {
@@ -35,7 +37,7 @@ export function filterSystems(rows: readonly SystemRow[], query: string): System
 }
 
 export function sortSystems(rows: readonly SystemRow[], key: SortKey): SystemRow[] {
-  return [...rows].sort(comparators[key]); // copy first: sort() would mutate the input
+  return sortBy(rows, ...sortCriteria[key]);
 }
 
 // What the grid shows: filter first (fewer items), then sort.

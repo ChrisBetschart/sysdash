@@ -1,3 +1,5 @@
+import { sortBy } from "@/lib/sortBy";
+
 // Layer for transport.opendata.ch. Only this file knows the API's structure.
 export type Health = "ok" | "degraded" | "down";
 
@@ -65,8 +67,9 @@ function readBoard(data: unknown): { station?: string; departures: Departure[] }
       operator: str(e?.operator),
     });
   }
-  departures.sort((a, b) => a.ts - b.ts); // don't rely on the API's order
-  return { station, departures };
+
+  // Don't rely on the API's order. Same generic helper as for the system tiles.
+  return { station, departures: sortBy(departures, { by: (d) => d.ts }) };
 }
 
 // The only function that talks to the API.

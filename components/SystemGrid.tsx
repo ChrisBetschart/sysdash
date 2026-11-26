@@ -9,7 +9,7 @@ import { splitMatch, visibleSystems, type SortKey, type SystemRow } from "@/lib/
 export type { SystemRow };
 
 // Labels only (no logic). Record<SortKey, ...> forces a label for every key.
-const SORT_LABELS: Record<SortKey, string> = { severity: "Schwere", name: "Name" };
+const SORT_LABELS: Record<SortKey, string> = { severity: "Schwere", name: "Name", value: "Wert" };
 
 // Renders the parts from splitMatch(). The decision is made in systemLogic.ts.
 function Highlight({ text, query }: { text: string; query: string }) {
