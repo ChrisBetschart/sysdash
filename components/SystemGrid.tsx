@@ -1,9 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import Tile from "@/components/Tile";
 import SystemForm from "@/components/SystemForm";
-import { splitMatch, visibleSystems, type SortKey, type SystemRow } from "@/lib/systemLogic";
+import {
+  SORT_KEYS,
+  buildSearch,
+  parseSortKey,
+  splitMatch,
+  visibleSystems,
+  type SortKey,
+  type SystemRow,
+} from "@/lib/systemLogic";
 
 // Re-export so existing imports keep working.
 export type { SystemRow };
@@ -27,10 +36,21 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 export default function SystemGrid({ rows }: { rows: SystemRow[] }) {
-  // State only. No filtering or sorting logic in here.
+  // Systems created via the form (no database yet).
   const [added, setAdded] = useState<SystemRow[]>([]);
-  const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("severity");
+
+  // Search and sort live in the URL: it is the single source of truth.
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const query = searchParams.get("q") ?? "";
+  const sortKey = parseSortKey(searchParams.get("sort"));
+
+  // Writes the new state into the URL without a server round trip.
+  // replaceState instead of pushState: typing should not fill the back button history.
+  function updateUrl(next: { q?: string; sort?: SortKey }) {
+    const search = buildSearch(next.q ?? query, next.sort ?? sortKey);
+    window.history.replaceState(null, "", search ? `${pathname}?${search}` : pathname);
+  }
 
   const all = [...rows, ...added];
   const visible = visibleSystems(all, query, sortKey);
@@ -47,19 +67,19 @@ export default function SystemGrid({ rows }: { rows: SystemRow[] }) {
           id="system-search"
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => updateUrl({ q: e.target.value })}
           placeholder="System suchen…"
           autoComplete="off"
           className="w-full rounded-lg bg-raised px-4 py-2 text-fg placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-80"
         />
 
         <div role="group" aria-label="Sortierung" className="flex rounded-lg bg-raised p-1">
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+          {SORT_KEYS.map((key) => (
             <button
               key={key}
               type="button"
               aria-pressed={sortKey === key}
-              onClick={() => setSortKey(key)}
+              onClick={() => updateUrl({ sort: key })}
               className={`rounded-md px-3 py-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 sortKey === key ? "bg-accent text-bg" : "text-muted hover:text-fg"
               }`}

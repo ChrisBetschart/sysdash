@@ -10,7 +10,11 @@ export type SystemRow = {
   status: Status;
 };
 
-export type SortKey = "severity" | "name" | "value";
+// Single list of valid sort keys. The type is derived from it,
+// so list and type can never drift apart.
+export const SORT_KEYS = ["severity", "name", "value"] as const;
+export type SortKey = (typeof SORT_KEYS)[number];
+export const DEFAULT_SORT: SortKey = "severity";
 
 // All functions are pure: same input -> same output, no side effects,
 // input arrays are never mutated.
@@ -23,7 +27,6 @@ export function normalizeQuery(query: string): string {
 const byTitle: Criterion<SystemRow> = { by: (s) => s.title };
 
 // Record<SortKey, ...> forces criteria for every sort key.
-// All three use the same generic sortBy, only the criteria differ.
 const sortCriteria: Record<SortKey, Criterion<SystemRow>[]> = {
   severity: [{ by: (s) => severity[s.status], dir: "desc" }, byTitle],
   name: [byTitle],
@@ -43,6 +46,20 @@ export function sortSystems(rows: readonly SystemRow[], key: SortKey): SystemRow
 // What the grid shows: filter first (fewer items), then sort.
 export function visibleSystems(rows: readonly SystemRow[], query: string, key: SortKey): SystemRow[] {
   return sortSystems(filterSystems(rows, query), key);
+}
+
+// URL -> state. Anything unknown (?sort=foo, missing) falls back to the default.
+// The URL is user input: never trust it blindly.
+export function parseSortKey(raw: string | null): SortKey {
+  return SORT_KEYS.find((k) => k === raw) ?? DEFAULT_SORT;
+}
+
+// State -> URL. Default values are left out, so the URL stays short.
+export function buildSearch(query: string, sort: SortKey): string {
+  const params = new URLSearchParams();
+  if (query !== "") params.set("q", query);
+  if (sort !== DEFAULT_SORT) params.set("sort", sort);
+  return params.toString(); // e.g. "q=cpu&sort=name"
 }
 
 // Bonus: splits a title into the parts before, inside and after the match.
