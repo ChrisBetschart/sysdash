@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import type { Status } from "@/lib/status";
 
 type TileProps = {
-  title: string;
+  title: ReactNode; // text or JSX (e.g. with a highlighted search match)
   value: number;
   unit: string;
   status: Status;

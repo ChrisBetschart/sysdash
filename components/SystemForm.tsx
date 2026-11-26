@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import type { SystemRow } from "@/components/SystemGrid";
+import { useState, type SyntheticEvent } from "react";
+import type { SystemRow } from "@/lib/systemLogic";
 
 // Light shape check of the server response (tolerant reader).
 function isSystemRow(d: unknown): d is SystemRow {
@@ -18,7 +18,7 @@ export default function SystemForm({ onCreated }: { onCreated: (row: SystemRow) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault(); // stop the browser from reloading the page
     setError(null);
     setBusy(true);
