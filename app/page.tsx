@@ -1,6 +1,6 @@
 import LivePanel from "@/components/LivePanel";
 import Header from "@/components/Header";
-import Tile from "@/components/Tile";
+import SystemGrid from "@/components/SystemGrid";
 import TransportPanel from "@/components/TransportPanel";
 import AutoRefresh from "@/components/AutoRefresh";
 import { systems, type System } from "@/data/systems";
@@ -27,11 +27,10 @@ export default async function Home() {
 
       <section aria-labelledby="systems-title">
         <h2 id="systems-title" className="mb-4 text-xl font-semibold text-fg">Systeme</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((s) => (
-          <Tile key={s.id} title={s.title} value={s.value} unit={s.unit} status={s.status} />
-        ))}
-        </div>
+        {/* Only the fields the tiles need are sent to the browser */}
+        <SystemGrid
+          rows={rows.map(({ id, title, value, unit, status }) => ({ id, title, value, unit, status }))}
+        />
       </section>
 
       <TransportPanel result={transport} />
